@@ -1,61 +1,48 @@
-import React, { Component } from "react";
-import "./App.css";
+import React from 'react';
+import { Switch, Route, Redirect } from 'react-router-dom';
+import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
 
-import { Switch, Route, Redirect } from "react-router-dom";
-import { connect } from "react-redux";
+import './App.css';
 
-import { createStructuredSelector } from "reselect";
-import { selectCurrentUser } from "./redux/user/user-selectors";
-import { setCurrentUser } from "./redux/user/user-actions";
+import HomePage from './pages/homepage/homepage.component';
+import ShopPage from './pages/shop/shop.component';
+import SignInAndSignUpPage from './pages/sign-in-and-sign-up/sign-in-and-sign-up.component';
+import CheckoutPage from './pages/checkout/checkout.component';
 
-import HomePage from "./pages/homepage/homepage";
-import ShopPage from "./pages/shop/shop";
-import SigninAndSignupPage from "../src/pages/signin-and-signup/signin-and-signup";
-import Header from "../src/components/header/header";
-import CheckoutPage from "./pages/checkout/checkout";
+import Header from './components/header/header.component';
 
-import { auth, createUserProfileDocument } from "./firebase/firebase.utils";
+import { selectCurrentUser } from './redux/user/user.selectors';
+import { checkUserSession } from './redux/user/user.actions';
 
-class App extends Component {
+class App extends React.Component {
   unsubscribeFromAuth = null;
 
   componentDidMount() {
-    const { setCurrentUser } = this.props;
-    this.unsubscribeFromAuth = auth.onAuthStateChanged(async (userAuth) => {
-      if (userAuth) {
-        const userRef = await createUserProfileDocument(userAuth);
-        userRef.onSnapshot((snapShot) => {
-          setCurrentUser({
-            id: snapShot.id,
-            ...snapShot.data(),
-          });
-        });
-      }
-      setCurrentUser(userAuth);
-
-      // console.log(user);
-    });
+    const { checkUserSession } = this.props;
+    checkUserSession();
   }
 
   componentWillUnmount() {
     this.unsubscribeFromAuth();
   }
+
   render() {
     return (
       <div>
         <Header />
         <Switch>
-          <Route exact path="/" component={HomePage} />
-          <Route path="/shop" component={ShopPage} />
-          <Route exact path="/checkout" component={CheckoutPage} />
+          <Route exact path='/' component={HomePage} />
+          <Route path='/shop' component={ShopPage} />
+          <Route exact path='/checkout' component={CheckoutPage} />
           <Route
             exact
-            path="/signin"
+            path='/signin'
             render={() =>
               this.props.currentUser ? (
-                <Redirect to="/" />
+                <Redirect to='/' />
               ) : (
-                <SigninAndSignupPage />
+                <SignInAndSignUpPage />
               )
             }
           />
@@ -66,10 +53,14 @@ class App extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-  currentUser: selectCurrentUser,
-});
-const mapDispatchToProps = (dispatch) => ({
-  setCurrentUser: (user) => dispatch(setCurrentUser(user)),
+  currentUser: selectCurrentUser
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(App);
+const mapDispatchToProps = dispatch => ({
+  checkUserSession: () => dispatch(checkUserSession())
+});
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(App);
